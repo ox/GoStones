@@ -1,0 +1,13 @@
+GoGems
+----------------
+
+Initially, I had noticed that there are a lot of packages
+for Go. They were all nice and dandy but then I realized 
+that gettign those packages takes a long time and some
+times it's just nicer to have something do all the heavy
+lifting for you. Plus I really liked Ruby's system of 
+just "$>gem install unicorn" to install gems and then
+they were instantly available. I believe that particular
+advantage to the ease of use of Ruby and Gems really 
+pushed Ruby forward. So in my desire to push Go forward
+I have started this small project. Hope it's useful!
