@@ -48,6 +48,7 @@ import (
 	"path";
 	"http";
 	"strings";
+	"syscall";
 //	"compress/flate";
 	)
 	
@@ -108,7 +109,6 @@ func main() {
 	var list_full *bool = flag.Bool("list-all", false, "list repositories with their associated aliases");
 	var add_repo *string = flag.String("add", "", "Add a repo to the list of known repositories <-add=\"url alias1 alias2\">");
 	var remove_repository *string = flag.String("remove-repository", "", "Remove selected repository and it's associated aliases by url or alias");
-	var remove_alias *string = flag.String("remove-alias", "", "Remove alias from a repository");
 	var install *string = flag.String("install", "", "Install GoGem");
 	flag.Parse();
 	
@@ -241,45 +241,46 @@ func main() {
 		
 		//search the repos for the right file
 		for i := 0; i < ik; i++ {
-			_, pre_tested_name := path.Split( repositories.At(i).(GemSource).short_names[0] );
+			gem := repositories.At(i).(*GemSource);
+			_, pre_tested_name := path.Split( gem.short_names[0] );
 			tested_name := strings.Split( pre_tested_name, ".", -1)[0];
 			
-			if tested_name == file_name {
-				response, _, err := http.Get( repositories.At(i).(GemSource).url );
-				if err != nil { fmt.Println( err ); }
-				
-				var nr int;
-				const buf_size = 0x10;
-				buf := make ([]byte, buf_size);
-				nr, _ = response.Body.Read (buf);
+			for _, val := range gem.short_names {
+				if tested_name == file_name || val == file_name || val == file_name+"\n"{
+					str := strings.Split(gem.url, ":", -1);
+					
+					switch str[0] {
+						case "http":
+							fmt.Println("Pulling from the net...");
+						
+							response, _, err := http.Get( gem.url );
+							if err != nil { fmt.Println( err ); os.Exit(1); }
+							
+							var nr int;
+							const buf_size = 0x10;
+							buf := make ([]byte, buf_size);
+							nr, _ = response.Body.Read (buf);
 
-				if nr >= buf_size { panic ("Buffer overrun") }
-				
-				errorr := io.WriteFile("./"+pre_tested_name, buf, 0755);
-				if errorr != nil { fmt.Println(errorr) }
-				
-				buf = nil;
-				response.Body.Close ();
-				
-				fmt.Println("passed retrieving file...");
-				
-				//now lets handle unzipping, so far only gzip and zlib
-//				file, _ := os.Open("./"+pre_tested_name, os.O_RDONLY, 0755);
-//				reader := bufio.NewReader( file );
-//				infl := flate.NewInflater( reader );
-//				
-//				buf2 := make([]byte, buf_size);
-//				deflated, _ := infl.Read(buf2);
-//				if deflated >= buf_size { panic("BUFFER OVERRUN!") }
-//				
-//				errr := io.WriteFile("./"+tested_name, buf2, 0755);
-//				if errr != nil { fmt.Println(errr) };
-//				buf2 = nil;
-//				
-//				infl.Close();
-				
-				
-				break;
+							if nr >= buf_size { panic ("Buffer overrun") }
+							
+							errorr := io.WriteFile("./"+pre_tested_name, buf, 0755);
+							if errorr != nil { fmt.Println(errorr); os.Exit(1); }
+							
+							buf = nil;
+							response.Body.Close ();
+							break;
+						
+						case "git":
+							fmt.Println("git'n it from the net...");
+							err := syscall.Exec("git pull "+gem.url, nil, nil);
+							if err != 0 { errors.Push(err); os.Exit(1);}
+							break;
+						}
+					
+					fmt.Println("passed retrieving file...");				
+
+					break;
+				}
 			}
 		}
 	}
