@@ -48,7 +48,7 @@ import (
 	"path";
 	"http";
 	"strings";
-	"syscall";
+//	"syscall";
 //	"compress/flate";
 	)
 	
@@ -246,8 +246,13 @@ func main() {
 			tested_name := strings.Split( pre_tested_name, ".", -1)[0];
 			
 			for _, val := range gem.short_names {
+			
+				
+			
 				if tested_name == file_name || val == file_name || val == file_name+"\n"{
 					str := strings.Split(gem.url, ":", -1);
+					
+					fmt.Println(str[0]);
 					
 					switch str[0] {
 						case "http":
@@ -272,8 +277,8 @@ func main() {
 						
 						case "git":
 							fmt.Println("git'n it from the net...");
-							err := syscall.Exec("git pull "+gem.url, nil, nil);
-							if err != 0 { errors.Push(err); os.Exit(1);}
+							err := os.Exec("git", []string{"pull", gem.url}, os.Environ() );
+							if err != nil { errors.Push(err); os.Exit(1);}
 							break;
 						}
 					
