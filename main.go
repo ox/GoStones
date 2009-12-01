@@ -1,40 +1,61 @@
-/*
-GoGems
------------------------
 
-GoGems is an attempt to create RubyGems-like plugin support for Google's Go.
-There will be a main Redmine-run repo called GoForge that will use the little
-script that I created back in the addons.of.cc days.
-
-It works as follows:
-
-	A list of svn/git repos or list providers
-		|			|
-		|			|
-		|		  GoGem +- install -- git/svn pull
-		|			|	|				   |
-		|			|	+---+			   |
-		|	add/remove repo	|	   +-~/go/gems/blah
-		|			|		|	   |		|
-		------------+	uninstall  |		|
-							|	   +---into $PATH
-							|	   |	
-							remove-+
-
-
-Development procedure:
-
-	^-Try to read a file with repos
-	^-Add repo to the list
-	-Try to pull random repos
-	-Try to delete pulled repo
-	-Try to get a certain version of the repo
-	-Put pulled repo into path
-	-Create a small plugin, have Gems build it
-	-Put pulled plugin into $PATH, have .go scripts be able to import it
-
-
-*/
+//GoStones
+//-----------------------
+//
+//GoStones is an attempt to create RubyGems-like plugin support for Google's Go.
+//There will be a main Redmine-run repo called GoForge that will use the little
+//script that I created back in the addons.of.cc days.
+//
+//It works as follows:
+//
+//	A list of svn/git repos or list providers
+//		|			|
+//		|			|
+//		|		  GoGem +- install -- git/svn pull
+//		|			|	|				   |
+//		|			|	+---+			   |
+//		|	add/remove repo	|	   +-~/go/gems/blah
+//		|			|		|	   |		|
+//		------------+	uninstall  |		|
+//							|	   +---into $PATH
+//							|	   |	
+//							remove-+
+//
+//
+//Development procedure:
+//
+//	^-Try to read a file with repos
+//	^-Add repo to the list
+//	-Try to pull random repos
+//	-Try to delete pulled repo
+//	-Try to get a certain version of the repo
+//	//-Put pulled repo into path
+//	-Create a small plugin, have Stones build it
+//	//-Put pulled plugin into $PATH, have .go scripts be able to import it { make.bash builds and copies everything }
+//
+//
+//proposed git pull procedure (Frederik Deweerdt):
+//	import "os"
+//	import "log"
+//
+//	func main() {
+//			var args [3]string;
+//			args[0] = "git";
+//			args[1] = "clone";
+//			args[2] = "YOUR GIT URL HERE";
+//			var fds []*os.File = new([3]*os.File);
+//			fds[0] = os.Stdin;
+//			fds[1] = os.Stdout;
+//			fds[2] = os.Stderr;
+//
+//			/* Replace this with git's full path, or use a shell, and then call git in the args */
+//			pid, err := os.ForkExec("/opt/local/bin/git", &args, os.Envs, "/tmp", fds);
+//			if err != nil {
+//					log.Exit(err)
+//			}
+//
+//			os.Wait(pid, 0);
+//	}
 
 package main
 
@@ -42,6 +63,7 @@ import (
 	"fmt";
 	"io";
 	"os";
+	"log";
 	"bufio";
 	"container/vector";
 	"flag";
@@ -76,6 +98,29 @@ type GemSource struct {
 		return g.url
 	}
 	
+
+func br() {
+	fmt.Printf("\n");
+}
+
+func git_from_net(url string) {
+	var args [3]string;
+	args[0] = "git";
+	args[1] = "clone";
+	args[2] = url;
+	var fds []*os.File = new([3]*os.File);
+	fds[0] = os.Stdin;
+	fds[1] = os.Stdout;
+	fds[2] = os.Stderr;
+
+	/* Replace this with git's full path, or use a shell, and then call git in the args */
+	pid, err := os.ForkExec("/usr/local/git/bin/git", &args, os.Envs, "./", fds);
+	if err != nil {
+			log.Exit(err)
+	}
+
+	os.Wait(pid, 0);
+}
 
 
 	
@@ -277,8 +322,9 @@ func main() {
 						
 						case "git":
 							fmt.Println("git'n it from the net...");
-							err := os.Exec("git", []string{"pull", gem.url}, os.Environ() );
-							if err != nil { errors.Push(err); os.Exit(1);}
+							
+							git_from_net( string(gem.url) );
+							
 							break;
 						}
 					

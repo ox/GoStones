@@ -1,4 +1,4 @@
-GoGems
+GoStones
 ----------------
 
 Initially, I had noticed that there are a lot of packages
@@ -11,3 +11,7 @@ they were instantly available. I believe that particular
 advantage to the ease of use of Ruby and Gems really 
 pushed Ruby forward. So in my desire to push Go forward
 I have started this small project. Hope it's useful!
+
+Author: Artem Titoulenko
+
+Contributors: Frederik Deweerdt (git clone)
