@@ -1,3 +1,15 @@
+# This is the GoStones master list for online repo's.
+# The local list of installed packages is generated 
+# in the code so as to not cause any weird sync 
+# problems.
+#
+#
+#
+
 http://localhost/~Artem/lol.txt.zip lol lol2
+# some random comment
+
+# notice that empty line? lets see how this goes... 
 git://github.com/OwlHuntr/ofxOctree.git ofxOctTree
 http://i.want.this.to.work.com/more_food.zip more_food
+git://github.com/OwlHuntr/GoBr.git br

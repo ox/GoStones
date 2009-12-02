@@ -103,7 +103,7 @@ func br() {
 	fmt.Printf("\n");
 }
 
-func git_from_net(url string) {
+func git_from_net(url string) string {
 	var args [3]string;
 	args[0] = "git";
 	args[1] = "clone";
@@ -112,9 +112,44 @@ func git_from_net(url string) {
 	fds[0] = os.Stdin;
 	fds[1] = os.Stdout;
 	fds[2] = os.Stderr;
+	
+	_, str := path.Split(url);
+	name := strings.Split(str, ".",-1)[0];
+	var git_path string;
+	
+	switch os.Getenv("GOOS") {
+		case "darwin":
+			git_path = "/usr/local/git/bin/git";
+			break;
+		case "linux":
+			git_path = "/opt/local/bin/git";
+			break;
+		}
 
 	/* Replace this with git's full path, or use a shell, and then call git in the args */
-	pid, err := os.ForkExec("/usr/local/git/bin/git", &args, os.Envs, "./", fds);
+	pid, err := os.ForkExec(git_path, &args, os.Envs , os.Getenv("GOROOT")+"/src/pkg/", fds);
+	if err != nil {
+			log.Exit(err)
+	}
+
+	os.Wait(pid, 0);
+
+	return string(os.Getenv("GOROOT")+"/src/pkg/"+name);
+}
+
+func build_pkg(dir string) {
+
+	var args [3]string;
+	args[0] = "make";
+	args[1] = dir+"/Makefile";
+	args[2] = dir;
+	var fds []*os.File = new([3]*os.File);
+	fds[0] = os.Stdin;
+	fds[1] = os.Stdout;
+	fds[2] = os.Stderr;
+
+	/* Replace this with git's full path, or use a shell, and then call git in the args */
+	pid, err := os.ForkExec("/usr/bin/make", &args, os.Envs , dir, fds);
 	if err != nil {
 			log.Exit(err)
 	}
@@ -123,9 +158,16 @@ func git_from_net(url string) {
 }
 
 
-	
+var get_go_gems_version *bool = flag.Bool("version", false, "Show the version number");
+var show_errors *bool = flag.Bool("show_errors", false, "Show errors");
+var list *bool = flag.Bool("list", false, "List all available repositories");
+var list_full *bool = flag.Bool("list-all", false, "list repositories with their associated aliases");
+var add_repo *string = flag.String("add-repository", "", "Add a repository to the list of known repositories <-add=\"url alias1 alias2\">");
+var remove_repository *string = flag.String("remove-repository", "", "Remove selected repository and it's associated aliases by url or alias");
+var install *string = flag.String("install", "", "Install GoGem");
 
 func main() {
+	flag.Parse();
 	errors := vector.New(0);
 	
 	//fill repositories StringVector
@@ -138,28 +180,21 @@ func main() {
 	
 	for {
 		dat2, err := in.ReadSlice('\n');
-		if err != nil || string(dat2[0:len(dat2)-1]) == "" { errors.Push(err); break; }
+		if err == os.EOF || (string(dat2[0:len(dat2)-1]) == "" && err == os.EOF) { errors.Push(err); break; }
 		
-		str := strings.Split(string(dat2), " ", -1);
-		gem := NewGemSource(str[1:len(str)], str[0]);
-		repositories.Push( gem );
-		
-		ik++;
+		if string(dat2[0]) != "#" && string(dat2[0]) != "" && string(dat2[0]) != "\n" { //# is a comment
+			str := strings.Split(string(dat2), " ", -1);
+			gem := NewGemSource(str[1:len(str)], str[0]);
+			repositories.Push( gem );
+			
+			ik++;
+			}
 		}
 	
 	
-	var get_go_gems_version *bool = flag.Bool("version", false, "Show the version number");
-	var show_errors *bool = flag.Bool("show_errors", false, "Show errors");
-	var list *bool = flag.Bool("list", false, "List all available repositories");
-	var list_full *bool = flag.Bool("list-all", false, "list repositories with their associated aliases");
-	var add_repo *string = flag.String("add", "", "Add a repo to the list of known repositories <-add=\"url alias1 alias2\">");
-	var remove_repository *string = flag.String("remove-repository", "", "Remove selected repository and it's associated aliases by url or alias");
-	var install *string = flag.String("install", "", "Install GoGem");
-	flag.Parse();
-	
 	//get the version number
 	if *get_go_gems_version {
-		go_gems_version, err := io.ReadFile("./go_gems_version");
+		go_gems_version, err := io.ReadFile("./go_stones_version");
 		
 		if go_gems_version == nil { errors.Push(err) }
 		fmt.Println("Welcome to GoGems version ", string(go_gems_version)); 
@@ -271,12 +306,14 @@ func main() {
 		out = bufio.NewWriter( file );
 		
 		for i := 0; i < repositories.Len(); i++ {
-			io.WriteString(out, repositories.At(i).(*GemSource).url);
-			for k := 0; k < len(repositories.At(i).(*GemSource).short_names); k++ {
-				io.WriteString(out, " " + repositories.At(i).(*GemSource).short_names[k]);
+			gem := repositories.At(i).(*GemSource);
+			io.WriteString(out, gem.url);
+			for k := 0; k < len(gem.short_names); k++ {
+				io.WriteString(out, " " + gem.short_names[k]);
 			}
-			//io.WriteString(out, "\n" );
 		}
+		io.WriteString(out, "\n" );
+		
 		out.Flush();	
 		file.Close();
 	}
@@ -323,7 +360,9 @@ func main() {
 						case "git":
 							fmt.Println("git'n it from the net...");
 							
-							git_from_net( string(gem.url) );
+							dir := git_from_net( string(gem.url) );
+							log.Stdout( dir );
+							build_pkg( string(dir) );
 							
 							break;
 						}
