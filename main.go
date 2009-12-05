@@ -197,7 +197,7 @@ func main() {
 		go_gems_version, err := io.ReadFile("./go_stones_version");
 		
 		if go_gems_version == nil { errors.Push(err) }
-		fmt.Println("Welcome to GoGems version ", string(go_gems_version)); 
+		fmt.Println("GoStones version ", string(go_gems_version)); 
 		
 		br();
 	}

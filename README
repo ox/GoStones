@@ -15,3 +15,22 @@ I have started this small project. Hope it's useful!
 Author: Artem Titoulenko
 
 Contributors: Frederik Deweerdt (git clone)
+
+
+
+Building & Installing
+----------------
+
+To make this package just do (shell):
+	make
+	
+To install this package just do (shell):
+	make install
+	
+(aka the order is make; make install; )
+
+To clean the package just do (shell):
+	make clean
+	
+To clean the package and uninstall, just nuke it (shell):
+	make nuke
